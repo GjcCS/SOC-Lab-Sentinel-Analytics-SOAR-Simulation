@@ -34,8 +34,8 @@ Episodes 1 through 4 covered detection and simulation across MDE, MDO, and MDI. 
 | Data Collection Rules | `dcr-signinlogs-custom`, `dcr-scheduled-task-detection` |
 | Playbook | `pb-soc-lab-incident-notify-tag` |
 
-![Resource Group Overview](Project-05/01-environment-setup/01-resource-group-overview.png)
-![Sentinel Workspace Enabled](Project-05/01-environment-setup/02-sentinel-workspace-enabled.png)
+![Resource Group Overview](Project-5/01-environment-setup/01-resource-group-overview.png)
+![Sentinel Workspace Enabled](Project-5/01-environment-setup/02-sentinel-workspace-enabled.png)
 
 **Note:** Sentinel is now managed from the unified Defender portal (`security.microsoft.com` → Microsoft Sentinel → Configuration), not the classic Azure Sentinel blade. Microsoft has been migrating workspaces to this experience, and it is the primary interface for anyone starting a new lab today.
 
@@ -63,15 +63,15 @@ SigninLogsCustom_CL
 | project UserPrincipalName, PrevCountry, Country, PrevTime, TimeGenerated, TimeDeltaMinutes
 ```
 
-![Injected Sign-in Events](Project-05/02-impossible-travel/01-injected-events-log-analytics.png)
+![Injected Sign-in Events](Project-5/02-impossible-travel/01-injected-events-log-analytics.png)
 
 **Analytics Rule:** "Impossible Travel - Sign-in from Distant Locations", Severity Medium, Tactic Initial Access, Technique T1078, entity mapping on Account/UserPrincipalName.
 
-![Analytics Rule Created](Project-05/02-impossible-travel/02-analytics-rule-created.png)
+![Analytics Rule Created](Project-5/02-impossible-travel/02-analytics-rule-created.png)
 
 **Result:** Incident #851 fired, was investigated, and closed as Resolved, Classification True Positive.
 
-![Incident Resolved](Project-05/02-impossible-travel/05-incident-resolved-final.png)
+![Incident Resolved](Project-5/02-impossible-travel/05-incident-resolved-final.png)
 
 **Limitation documented:** because the source is a custom table rather than a native connector, the incident's Evidence tab stays empty ("No related evidence was found"), even though entity mapping still works correctly. Worth calling out as a known trade-off of custom ingestion rather than a bug.
 
@@ -96,7 +96,7 @@ Getting this event into Sentinel was the most involved part of the episode:
 1. A manual DCR (`dcr-scheduled-task-detection`) was built with a custom XPath filter (`Security!*[System[(EventID=4698)]]`), no DCE needed since this uses AMA directly rather than the Logs Ingestion API.
 2. The Azure Monitor Agent installed cleanly, but no data was arriving.
 
-![AMA Agent Installed](Project-05/04-troubleshooting-ama/01-ama-agent-installed.png)
+![AMA Agent Installed](Project-5/04-troubleshooting-ama/01-ama-agent-installed.png)
 
 3. Ruled out one by one: audit policy (already Success and Failure), managed identity (already on), network connectivity (`Test-NetConnection` succeeded), agent processes (all running).
 4. Found the root cause: the manual DCR was mapped to the `Microsoft-Event` stream (table `Event`), not `Microsoft-SecurityEvent` (table `SecurityEvent`) as expected.
@@ -105,7 +105,7 @@ Getting this event into Sentinel was the most involved part of the episode:
 7. Even with the native connector, data still landed in the `Event` table, likely due to overlap with the earlier manual DCR. Rather than chase the "textbook" `SecurityEvent` table, the pragmatic call was to build detection on `Event`, which was consistently reliable.
 8. Minor gotcha: `Computer` is truncated to 15 characters (NetBIOS limit), so filters need to match the truncated hostname.
 
-![AMA Connector Connected](Project-05/04-troubleshooting-ama/02-native-connector-installed.png)
+![AMA Connector Connected](Project-5/04-troubleshooting-ama/02-native-connector-installed.png)
 
 **Detection query** (parses TaskName, ExecutedCommand, and ExecutedArgs out of the raw event description):
 
@@ -122,16 +122,16 @@ Event
 
 **Analytics Rule:** "Scheduled Task Persistence - Suspicious Task Creation", Severity Medium, Tactic Persistence, Technique T1053.005, entity mapping on Host/Computer.
 
-![Analytics Rule Review Detail](Project-05/03-scheduled-task-persistence/04-analytics-rule-review-detail.png)
-![Both Analytics Rules Active](Project-05/03-scheduled-task-persistence/05-analytics-rules-both-active.png)
+![Analytics Rule Review Detail](Project-5/03-scheduled-task-persistence/04-analytics-rule-review-detail.png)
+![Both Analytics Rules Active](Project-5/03-scheduled-task-persistence/05-analytics-rules-both-active.png)
 
 **Result:** Incident #434, *Scheduled Task Persistence - Suspicious Task Creation*, fired against `vm-soc-lab-sentinel`. The rule generated four incidents total across repeated evaluation cycles on the same underlying events, a known grouping/tuning gap worth documenting rather than hiding.
 
-![Incident Detail](Project-05/03-scheduled-task-persistence/06-incident-detail.png)
+![Incident Detail](Project-5/03-scheduled-task-persistence/06-incident-detail.png)
 
 Across both scenarios, the incident queue reached 11 total incidents over the course of testing, most of them duplicates from the same tuning gap described above.
 
-![Both Scenarios Incident Queue](Project-05/06-bonus/01-both-scenarios-incidents-list.png)
+![Both Scenarios Incident Queue](Project-5/06-bonus/01-both-scenarios-incidents-list.png)
 
 ---
 
@@ -143,8 +143,8 @@ The Logic App `pb-soc-lab-incident-notify-tag` runs on the Consumption plan and 
 2. **Add comment to incident (V3)** — posts a dynamic comment with Incident, Severity, Tactics, and Status
 3. **Send an email (V2)** — notifies the analyst
 
-![Logic App Full Flow](Project-05/05-playbook-soar/01-logic-app-designer-full-flow.png)
-![Update Incident Action Configured](Project-05/05-playbook-soar/02-update-incident-action-configured.png)
+![Logic App Full Flow](Project-5/05-playbook-soar/01-logic-app-designer-full-flow.png)
+![Update Incident Action Configured](Project-5/05-playbook-soar/02-update-incident-action-configured.png)
 
 A system-assigned managed identity on the Logic App was granted the **Microsoft Sentinel Responder** role on the workspace, which the Update incident and Add comment actions rely on.
 
@@ -161,8 +161,8 @@ Email is sent via the **Office 365 Outlook** connector. Gmail was tried first, b
 
 **Confirmed working end to end:** across multiple test runs, the playbook applied the `Auto-Triaged` tag, posted the automated comment, and delivered the email notification with Incident, Severity, and Tactics (rendered as an array, e.g. `["InitialAccess"]`) and Status.
 
-![Incident List Auto-Triaged](Project-05/05-playbook-soar/05-incident-list-autotriaged.png)
-![Email Notification Received](Project-05/05-playbook-soar/06-email-notification-received.png)
+![Incident List Auto-Triaged](Project-5/05-playbook-soar/05-incident-list-autotriaged.png)
+![Email Notification Received](Project-5/05-playbook-soar/06-email-notification-received.png)
 
 ---
 
@@ -202,7 +202,7 @@ Email is sent via the **Office 365 Outlook** connector. Gmail was tried first, b
 ## 📁 Repository Structure
 
 ```
-Project-05/
+Project-5/
 ├── 01-environment-setup/
 ├── 02-impossible-travel/
 ├── 03-scheduled-task-persistence/
