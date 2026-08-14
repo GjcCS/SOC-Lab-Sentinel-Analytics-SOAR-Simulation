@@ -107,6 +107,8 @@ Getting this event into Sentinel was the most involved part of the episode:
 
 ![AMA Connector Connected](Project-5/04-troubleshooting-ama/02-native-connector-installed.png)
 
+![Security Event 4698 Query Results](Project-5/03-scheduled-task-persistence/03-security-event-4698-query-results.png)
+
 **Detection query** (parses TaskName, ExecutedCommand, and ExecutedArgs out of the raw event description):
 
 ```kql
